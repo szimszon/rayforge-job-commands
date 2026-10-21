@@ -1,15 +1,60 @@
+import logging
 import gi
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
-from gi.repository import Adw, Gtk  # noqa: E402
+
+from gi.repository import Adw, Gdk, Gtk, Gio # noqa: E402
 
 from .runner import EVENTS  # noqa: E402
 
+from pathlib import Path
 
-def _flat_icon_button(icon: str, tooltip: str) -> Gtk.Button:
-    btn = Gtk.Button(icon_name=icon, tooltip_text=tooltip,
-                     valign=Gtk.Align.CENTER)
+_ICON_DIR = Path(__file__).parent / "icons"
+
+_ICON_CANDIDATES = {
+    "add": ["list-add-symbolic", "add-symbolic", "jc-add-symbolic"],
+    "remove": ["user-trash-symbolic", "delete-symbolic",
+               "list-remove-symbolic", "jc-remove-symbolic"],
+    "run": ["media-playback-start-symbolic", "play-symbolic"],
+}
+
+_BUNDLED = {
+    "add": "jc-add-symbolic.svg",
+    "remove": "jc-remove-symbolic.svg",
+}
+
+_FALLBACK_TEXT = {"add": "+", "remove": "✕", "run": "▶"}
+
+def _resolve_icon(kind: str) -> str | None:
+    display = Gdk.Display.get_default()
+    theme = Gtk.IconTheme.get_for_display(display)
+    if _ICON_DIR.is_dir() and str(_ICON_DIR) not in theme.get_search_path():
+        theme.add_search_path(str(_ICON_DIR))
+    for name in _ICON_CANDIDATES[kind]:
+        if theme.has_icon(name):
+            logging.getLogger(__name__).info("icon %s -> %s", kind, name)
+            p = theme.lookup_icon(name, None, 16, 1, Gtk.TextDirection.NONE, 0)
+            f = p.get_file()
+            logging.getLogger(__name__).info(
+                "icon %s -> %s (%s)", kind, name, f.get_path() if f else "no file")
+            return name
+    return None
+
+
+def _flat_icon_button(kind: str, tooltip: str) -> Gtk.Button:
+    btn = Gtk.Button(tooltip_text=tooltip, valign=Gtk.Align.CENTER)
+    bundled = _ICON_DIR / _BUNDLED.get(kind, "")
+    if kind in _BUNDLED and bundled.is_file():
+        image = Gtk.Image.new_from_gicon(
+            Gio.FileIcon.new(Gio.File.new_for_path(str(bundled))))
+        btn.set_child(image)
+    else:
+        icon = _resolve_icon(kind)
+        if icon:
+            btn.set_icon_name(icon)
+        else:
+            btn.set_label(_FALLBACK_TEXT[kind])
     btn.add_css_class("flat")
     return btn
 
@@ -50,8 +95,8 @@ class JobCommandsWindow(Adw.Window):
             title="Events",
             description=("Commands run in a shell. Event details are available "
                          "as $RAYFORGE_EVENT, $RAYFORGE_MACHINE, "
-                         "$RAYFORGE_STATUS, $RAYFORGE_PREV_STATUS and "
-                         "$RAYFORGE_MESSAGE."),
+                         "$RAYFORGE_STATUS, $RAYFORGE_PREV_STATUS "
+                         "$RAYFORGE_MESSAGE and $RAYFORGE_TIMESTAMP."),
         )
         for ev, label in EVENTS:
             events.add(self._build_event_row(ev, label))
@@ -73,13 +118,13 @@ class JobCommandsWindow(Adw.Window):
     def _build_event_row(self, ev: str, label: str) -> Adw.ExpanderRow:
         expander = Adw.ExpanderRow(title=label, subtitle=ev)
 
-        test_btn = _flat_icon_button("media-playback-start-symbolic",
+        test_btn = _flat_icon_button("run",
                                      "Save and run this event's commands now")
         test_btn.connect("clicked", lambda _b, e=ev: self._on_test(e))
         expander.add_suffix(test_btn)
 
         add_row = Adw.ActionRow(title="Add command")
-        add_btn = _flat_icon_button("list-add-symbolic", "Add command")
+        add_btn = _flat_icon_button("add", "Add command")
         add_row.add_suffix(add_btn)
         add_row.set_activatable_widget(add_btn)
         expander.add_row(add_row)
@@ -109,7 +154,7 @@ class JobCommandsWindow(Adw.Window):
                        lambda s, _p: entry.__setitem__("enabled", s.get_active()))
         row.add_prefix(switch)
 
-        remove = _flat_icon_button("user-trash-symbolic", "Remove command")
+        remove = _flat_icon_button("remove", "Remove command")
 
         def on_remove(_b):
             self._events[ev][:] = [e for e in self._events[ev] if e is not entry]
