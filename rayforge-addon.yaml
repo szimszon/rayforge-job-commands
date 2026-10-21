@@ -1,0 +1,14 @@
+name: job_commands
+display_name: "Job Event Commands"
+description: "Run shell commands when a job starts, pauses, resumes, finishes or fails..."
+api_version: 16
+author:
+  name: Szabolcs Gyuris
+  email: github@oregpreshaz.eu
+depends:
+  - rayforge>=0.27.0
+provides:
+  frontend: job_commands.frontend
+license:
+  name: MIT
+maturity: experimental
