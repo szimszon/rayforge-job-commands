@@ -89,6 +89,13 @@ class JobCommandsWindow(Adw.Window):
         self._timeout.set_subtitle("Commands running longer than this are killed")
         self._timeout.set_value(float(self._cfg.get("default_timeout", 30)))
         general.add(self._timeout)
+        self._interval = Adw.SpinRow.new_with_range(0, 86400, 1)
+        self._interval.set_title("Progress command interval (seconds)")
+        self._interval.set_subtitle(
+            "How often the 'Job progress' commands run while a job is "
+            "running. 0 disables them. Rayforge reports at most once per second.")
+        self._interval.set_value(float(self._cfg.get("progress_interval", 30)))
+        general.add(self._interval)
         page.add(general)
 
         events = Adw.PreferencesGroup(
@@ -96,7 +103,11 @@ class JobCommandsWindow(Adw.Window):
             description=("Commands run in a shell. Event details are available "
                          "as $RAYFORGE_EVENT, $RAYFORGE_MACHINE, "
                          "$RAYFORGE_STATUS, $RAYFORGE_PREV_STATUS "
-                         "$RAYFORGE_MESSAGE and $RAYFORGE_TIMESTAMP."),
+                         "$RAYFORGE_MESSAGE, $RAYFORGE_TIMESTAMP and, for job events, "
+                         "$RAYFORGE_JOB_KIND, $RAYFORGE_PROGRESS (percent), "
+                         "$RAYFORGE_ELAPSED_SECONDS, $RAYFORGE_ETA_SECONDS, "
+                         "$RAYFORGE_ESTIMATED_SECONDS, $RAYFORGE_TRAVELED_DISTANCE and "
+                         "$RAYFORGE_TOTAL_DISTANCE."),
         )
         for ev, label in EVENTS:
             events.add(self._build_event_row(ev, label))
@@ -168,6 +179,7 @@ class JobCommandsWindow(Adw.Window):
     def _collect(self) -> dict:
         cfg = dict(self._cfg)                       # keep unknown keys
         cfg["default_timeout"] = self._timeout.get_value()
+        cfg["progress_interval"] = self._interval.get_value()
         events = dict(cfg.get("events") or {})      # keep unknown events
         for ev, _label in EVENTS:
             cleaned = []
