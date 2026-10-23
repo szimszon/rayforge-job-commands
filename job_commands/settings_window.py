@@ -10,7 +10,16 @@ from .runner import EVENTS  # noqa: E402
 
 from pathlib import Path
 
-_ICON_DIR = Path(__file__).parent / "icons"
+def _find_icon_dir() -> Path:
+    here = Path(__file__).resolve().parent
+    for base in (here, here.parent):          # package dir, then repo root
+        for name in ("assets/icons", "icons"):
+            candidate = base / name
+            if candidate.is_dir():
+                return candidate
+    return here / "icons"   
+
+_ICON_DIR = _find_icon_dir()
 
 _ICON_CANDIDATES = {
     "add": ["list-add-symbolic", "add-symbolic", "jc-add-symbolic"],

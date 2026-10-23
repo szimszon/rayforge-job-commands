@@ -1,0 +1,11 @@
+repos:
+  - repo: local
+    hooks:
+      - id: validate-addon-metadata
+        name: Validate Rayforge addon metadata
+        entry: python scripts/validate_addon.py
+        language: python
+        # Run this hook only when the metadata file itself changes.
+        files: ^rayforge-addon\.yaml$
+        # Ensure the script uses the same virtual environment.
+        additional_dependencies: [pyyaml, semver]

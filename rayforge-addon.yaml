@@ -11,4 +11,12 @@ provides:
   frontend: job_commands.frontend
 license:
   name: MIT
+
+  # If your addon includes assets, list their type and location here.
+  assets:
+    - type: "icons"
+      # The 'path' is relative to the root of this repository.
+      path: "./assets/icons/"
+      description: "Icons for setup window."
+
 maturity: experimental
