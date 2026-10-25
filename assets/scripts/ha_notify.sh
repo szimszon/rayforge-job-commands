@@ -53,8 +53,8 @@ fi
 
 # Build the payload. All values are passed with --arg (always plain
 # strings), so jq takes care of escaping quotes, backslashes, newlines, etc.
-# Numeric fields are converted to JSON numbers; an empty or non-numeric
-# value (e.g. progress on a "connected" event) becomes null.
+# Numeric fields are converted to JSON numbers; an empty, missing or
+# non-numeric value (e.g. progress on a "connected" event) becomes 0.
 DATA=$(jq -n -c \
     --arg event "${RAYFORGE_EVENT:-}" \
     --arg timestamp "${RAYFORGE_TIMESTAMP:-$(date +%s)}" \
@@ -62,13 +62,13 @@ DATA=$(jq -n -c \
     --arg machine_state "${RAYFORGE_STATUS:-}" \
     --arg alarm_code "${RAYFORGE_MESSAGE:-}" \
     --arg job_state "${RAYFORGE_JOB_KIND:-}" \
-    --arg progress "${RAYFORGE_PROGRESS:0}" \
+    --arg progress "${RAYFORGE_PROGRESS:-}" \
     --arg travelled "${RAYFORGE_TRAVELED_DISTANCE:-}" \
     --arg total "${RAYFORGE_TOTAL_DISTANCE:-}" \
     --arg elapsed "${RAYFORGE_ELAPSED_SECONDS:-}" \
     --arg remaining "${RAYFORGE_ETA_SECONDS:-}" \
     '
-    def num: try tonumber catch null;
+    def num: try tonumber catch 0;
     {
         event: $event,
         timestamp: ($timestamp | num),
