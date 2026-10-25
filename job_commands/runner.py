@@ -9,19 +9,20 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-# (event key, label shown in the settings window)
+from .i18n import N_
+
 EVENTS = [
-    ("job_started", "Job started"),
-    ("job_progress", "Job progress (periodic)"),
-    ("job_paused", "Job paused"),
-    ("job_resumed", "Job resumed"),
-    ("job_finished", "Job finished"),
-    ("job_stopped", "Job stopped (cancelled)"),
-    ("job_error", "Job error (failed)"),
-    ("alarm", "Machine alarm"),
-    ("connected", "Machine connected"),
-    ("disconnected", "Machine disconnected"),
-    ("connection_error", "Connection error"),
+    ("job_started", N_("Job started")),
+    ("job_progress", N_("Job progress (periodic)")),
+    ("job_paused", N_("Job paused")),
+    ("job_resumed", N_("Job resumed")),
+    ("job_finished", N_("Job finished")),
+    ("job_stopped", N_("Job stopped (cancelled)")),
+    ("job_error", N_("Job error (failed)")),
+    ("alarm", N_("Machine alarm")),
+    ("connected", N_("Machine connected")),
+    ("disconnected", N_("Machine disconnected")),
+    ("connection_error", N_("Connection error")),
 ]
 
 DEFAULT_PROGRESS_INTERVAL = 30.0

@@ -1,0 +1,111 @@
+# Hungarian translation for job_commands.
+msgid ""
+msgstr ""
+"Project-Id-Version: job_commands\n"
+"Language: hu\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+# frontend.py
+msgid "Job Event Commands…"
+msgstr "Feladatesemény-parancsok…"
+
+# runner.py (event labels)
+msgid "Job started"
+msgstr "Feladat elindult"
+
+msgid "Job progress (periodic)"
+msgstr "Feladat előrehaladása (időszakos)"
+
+msgid "Job paused"
+msgstr "Feladat szüneteltetve"
+
+msgid "Job resumed"
+msgstr "Feladat folytatva"
+
+msgid "Job finished"
+msgstr "Feladat befejeződött"
+
+msgid "Job stopped (cancelled)"
+msgstr "Feladat leállítva (megszakítva)"
+
+msgid "Job error (failed)"
+msgstr "Feladathiba (sikertelen)"
+
+msgid "Machine alarm"
+msgstr "Gép riasztás (alarm)"
+
+msgid "Machine connected"
+msgstr "Gép csatlakoztatva"
+
+msgid "Machine disconnected"
+msgstr "Gép leválasztva"
+
+msgid "Connection error"
+msgstr "Kapcsolódási hiba"
+
+# settings_window.py
+msgid "Job Event Commands"
+msgstr "Feladatesemény-parancsok"
+
+msgid "Save"
+msgstr "Mentés"
+
+msgid "General"
+msgstr "Általános"
+
+msgid "Default timeout (seconds)"
+msgstr "Alapértelmezett időkorlát (másodperc)"
+
+msgid "Commands running longer than this are killed"
+msgstr "Az ennél tovább futó parancsok le lesznek állítva"
+
+msgid "Progress command interval (seconds)"
+msgstr "Előrehaladás-parancsok időköze (másodperc)"
+
+msgid ""
+"How often the 'Job progress' commands run while a job is running. 0 disables "
+"them. Rayforge reports at most once per second."
+msgstr ""
+"Milyen gyakran futnak le a „Feladat előrehaladása” parancsok, amíg egy "
+"feladat fut. A 0 kikapcsolja őket. A Rayforge legfeljebb másodpercenként "
+"egyszer jelent."
+
+msgid "Events"
+msgstr "Események"
+
+msgid "Commands run in a shell. Event details are passed as environment variables:"
+msgstr ""
+"A parancsok shellben futnak. Az esemény adatai környezeti változóként "
+"érhetők el:"
+
+msgid "Job events additionally provide (progress is in percent):"
+msgstr ""
+"A feladatesemények ezen felül a következőket adják (az előrehaladás "
+"százalékban):"
+
+msgid "Save and run this event's commands now"
+msgstr "Mentés, majd az esemény parancsainak futtatása most"
+
+msgid "Add command"
+msgstr "Parancs hozzáadása"
+
+msgid "Command"
+msgstr "Parancs"
+
+msgid "Enabled"
+msgstr "Engedélyezve"
+
+msgid "Remove command"
+msgstr "Parancs eltávolítása"
+
+msgid "Saved"
+msgstr "Mentve"
+
+msgid "Could not save, see the log"
+msgstr "A mentés nem sikerült, lásd a naplót"
+
+msgid "Ran '{event}' commands"
+msgstr "A(z) „{event}” parancsok lefuttatva"

@@ -10,6 +10,15 @@ from .runner import EVENTS  # noqa: E402
 
 from pathlib import Path
 
+from .i18n import _
+
+_ENV_COMMON = ("$RAYFORGE_EVENT, $RAYFORGE_MACHINE, $RAYFORGE_STATUS, "
+               "$RAYFORGE_PREV_STATUS, $RAYFORGE_MESSAGE, $RAYFORGE_TIMESTAMP")
+_ENV_JOB = ("$RAYFORGE_JOB_KIND, $RAYFORGE_PROGRESS, "
+            "$RAYFORGE_ELAPSED_SECONDS, $RAYFORGE_ETA_SECONDS, "
+            "$RAYFORGE_ESTIMATED_SECONDS, $RAYFORGE_TRAVELED_DISTANCE, "
+            "$RAYFORGE_TOTAL_DISTANCE")
+
 def _find_icon_dir() -> Path:
     here = Path(__file__).resolve().parent
     for base in (here, here.parent):          # package dir, then repo root
@@ -70,7 +79,7 @@ def _flat_icon_button(kind: str, tooltip: str) -> Gtk.Button:
 
 class JobCommandsWindow(Adw.Window):
     def __init__(self, runner, parent=None):
-        super().__init__(title="Job Event Commands",
+        super().__init__(title=_("Job Event Commands"),
                          default_width=680, default_height=760)
         if parent is not None:
             self.set_transient_for(parent)
@@ -85,41 +94,40 @@ class JobCommandsWindow(Adw.Window):
 
         # --- layout -----------------------------------------------------
         header = Adw.HeaderBar()
-        save_btn = Gtk.Button(label="Save")
+        save_btn = Gtk.Button(label=_("Save"))
         save_btn.add_css_class("suggested-action")
         save_btn.connect("clicked", self._on_save)
         header.pack_end(save_btn)
 
         page = Adw.PreferencesPage()
 
-        general = Adw.PreferencesGroup(title="General")
+        general = Adw.PreferencesGroup(title=_("General"))
         self._timeout = Adw.SpinRow.new_with_range(1, 3600, 1)
-        self._timeout.set_title("Default timeout (seconds)")
-        self._timeout.set_subtitle("Commands running longer than this are killed")
+        self._timeout.set_title(_("Default timeout (seconds)"))
+        self._timeout.set_subtitle(_("Commands running longer than this are killed"))
         self._timeout.set_value(float(self._cfg.get("default_timeout", 30)))
         general.add(self._timeout)
         self._interval = Adw.SpinRow.new_with_range(0, 86400, 1)
-        self._interval.set_title("Progress command interval (seconds)")
-        self._interval.set_subtitle(
+        self._interval.set_title(_("Progress command interval (seconds)"))
+        self._interval.set_subtitle(_(
             "How often the 'Job progress' commands run while a job is "
-            "running. 0 disables them. Rayforge reports at most once per second.")
+            "running. 0 disables them. Rayforge reports at most once per second."))
         self._interval.set_value(float(self._cfg.get("progress_interval", 30)))
         general.add(self._interval)
         page.add(general)
 
         events = Adw.PreferencesGroup(
-            title="Events",
-            description=("Commands run in a shell. Event details are available "
-                         "as $RAYFORGE_EVENT, $RAYFORGE_MACHINE, "
-                         "$RAYFORGE_STATUS, $RAYFORGE_PREV_STATUS "
-                         "$RAYFORGE_MESSAGE, $RAYFORGE_TIMESTAMP and, for job events, "
-                         "$RAYFORGE_JOB_KIND, $RAYFORGE_PROGRESS (percent), "
-                         "$RAYFORGE_ELAPSED_SECONDS, $RAYFORGE_ETA_SECONDS, "
-                         "$RAYFORGE_ESTIMATED_SECONDS, $RAYFORGE_TRAVELED_DISTANCE and "
-                         "$RAYFORGE_TOTAL_DISTANCE."),
+            title=_("Events"),
+            description="\n".join([
+                _("Commands run in a shell. Event details are passed as "
+                  "environment variables:"),
+                _ENV_COMMON,
+                _("Job events additionally provide (progress is in percent):"),
+                _ENV_JOB,
+            ]),
         )
         for ev, label in EVENTS:
-            events.add(self._build_event_row(ev, label))
+            events.add(self._build_event_row(ev, _(label)))
         page.add(events)
 
         self._toasts = Adw.ToastOverlay()
@@ -139,12 +147,12 @@ class JobCommandsWindow(Adw.Window):
         expander = Adw.ExpanderRow(title=label, subtitle=ev)
 
         test_btn = _flat_icon_button("run",
-                                     "Save and run this event's commands now")
+                                     _("Save and run this event's commands now"))
         test_btn.connect("clicked", lambda _b, e=ev: self._on_test(e))
         expander.add_suffix(test_btn)
 
-        add_row = Adw.ActionRow(title="Add command")
-        add_btn = _flat_icon_button("add", "Add command")
+        add_row = Adw.ActionRow(title=_("Add command"))
+        add_btn = _flat_icon_button("add", _("Add command"))
         add_row.add_suffix(add_btn)
         add_row.set_activatable_widget(add_btn)
         expander.add_row(add_row)
@@ -163,18 +171,18 @@ class JobCommandsWindow(Adw.Window):
         expander.set_expanded(True)
 
     def _add_command_row(self, expander, ev: str, entry: dict) -> None:
-        row = Adw.EntryRow(title="Command")
+        row = Adw.EntryRow(title=_("Command"))
         row.set_text(entry.get("command", ""))
         row.connect("changed",
                     lambda r: entry.__setitem__("command", r.get_text()))
 
         switch = Gtk.Switch(active=entry.get("enabled", True) is not False,
-                            valign=Gtk.Align.CENTER, tooltip_text="Enabled")
+                            valign=Gtk.Align.CENTER, tooltip_text=_("Enabled"))
         switch.connect("notify::active",
                        lambda s, _p: entry.__setitem__("enabled", s.get_active()))
         row.add_prefix(switch)
 
-        remove = _flat_icon_button("remove", "Remove command")
+        remove = _flat_icon_button("remove", _("Remove command"))
 
         def on_remove(_b):
             self._events[ev][:] = [e for e in self._events[ev] if e is not entry]
@@ -212,13 +220,13 @@ class JobCommandsWindow(Adw.Window):
         return False
 
     def _on_save(self, _btn) -> None:
-        msg = "Saved" if self._save() else "Could not save, see the log"
+        msg = _("Saved") if self._save() else _("Could not save, see the log")
         self._toasts.add_toast(Adw.Toast(title=msg))
 
     def _on_test(self, ev: str) -> None:
         if not self._save():
-            self._toasts.add_toast(Adw.Toast(title="Could not save, see the log"))
+            self._toasts.add_toast(Adw.Toast(title=_("Could not save, see the log")))
             return
         self.runner.fire(ev, machine_name="settings-test", status="TEST",
                          message="Test run from settings", force=True)
-        self._toasts.add_toast(Adw.Toast(title=f"Ran '{ev}' commands"))
+        self._toasts.add_toast(Adw.Toast(title=_("Ran '{event}' commands").format(event=ev)))

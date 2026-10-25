@@ -1,6 +1,8 @@
 import logging
 import pluggy
 
+from .i18n import _
+
 from .runner import CommandRunner
 from .watcher import ConnectionWatcher
 
@@ -46,7 +48,7 @@ def register_actions(action_registry):
         action_name="job-commands-settings",
         action=action,
         addon_name="job_commands",
-        label="Job Event Commands…",
+        label=_("Job Event Commands…"),
         icon_name="preferences-system-symbolic",
         menu=MenuPlacement(menu_id="tools", priority=60),
     )
