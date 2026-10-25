@@ -18,5 +18,9 @@ license:
       # The 'path' is relative to the root of this repository.
       path: "./assets/icons/"
       description: "Icons for setup window."
+    - type: "ha-helper"
+      # The 'path' is relative to the root of this repository.
+      path: "./assets/ha-helper/"
+      description: "Some helper scripts and templates to integrate to Home Assistant."
 
 maturity: experimental

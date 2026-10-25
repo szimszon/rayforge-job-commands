@@ -1,0 +1,143 @@
+template:
+  - triggers:
+      - trigger: webhook
+        webhook_id: "{uuid}"
+        allowed_methods:
+          - POST
+        local_only: true
+
+    # Shared helpers, available to all entities below.
+    variables:
+      ev: "{{ trigger.json.event | default('') }}"
+      # True for events that carry job data (progress, elapsed, ...).
+      is_job: >-
+        {{ trigger.json.event | default('') in
+           ['job_started', 'job_progress', 'job_paused', 'job_resumed',
+            'job_finished', 'job_stopped', 'job_error'] }}
+
+    sensor:
+      # Last event received, with the raw details as attributes.
+      - name: "RayForge Event"
+        unique_id: rayforge_event
+        state: "{{ ev }}"
+        attributes:
+          machine_state: "{{ trigger.json.machine_state | default('') }}"
+          job_kind: "{{ trigger.json.job_kind | default('') }}"
+          alarm_code: "{{ trigger.json.alarm_code | default('') }}"
+
+      # When the last event happened (from the Unix timestamp in the payload).
+      - name: "RayForge Last Event Time"
+        unique_id: rayforge_last_event_time
+        device_class: timestamp
+        state: "{{ as_datetime(trigger.json.timestamp | float(0)) }}"
+
+      # Overall job state, derived from the event name.
+      - name: "RayForge Job Status"
+        unique_id: rayforge_job_status
+        state: >-
+          {% set m = {
+            'job_started': 'running',
+            'job_progress': 'running',
+            'job_resumed': 'running',
+            'job_paused': 'paused',
+            'job_finished': 'finished',
+            'job_stopped': 'stopped',
+            'job_error': 'error'
+          } %}
+          {% set prev = this.state if this.state not in
+                        ['unknown', 'unavailable', none] else 'idle' %}
+          {{ m.get(ev, prev) }}
+        attributes:
+          job_kind: >-
+            {{ trigger.json.job_kind if is_job and trigger.json.job_kind
+               else this.attributes.get('job_kind', '') }}
+
+      # Progress in percent. A started job is 0 %, a finished one 100 %.
+      - name: "RayForge Job Progress"
+        unique_id: rayforge_job_progress
+        unit_of_measurement: "%"
+        state_class: measurement
+        state: >-
+          {% if ev == 'job_started' %}0
+          {% elif ev == 'job_finished' %}100
+          {% elif is_job %}{{ trigger.json.progress | float(0) }}
+          {% else %}{{ this.state | float(0) }}
+          {% endif %}
+
+      - name: "RayForge Job Elapsed"
+        unique_id: rayforge_job_elapsed
+        device_class: duration
+        unit_of_measurement: "s"
+        state_class: measurement
+        state: >-
+          {% if ev == 'job_started' %}0
+          {% elif is_job %}{{ trigger.json.elapsed_s | float(0) }}
+          {% else %}{{ this.state | float(0) }}
+          {% endif %}
+
+      - name: "RayForge Job Remaining"
+        unique_id: rayforge_job_remaining
+        device_class: duration
+        unit_of_measurement: "s"
+        state_class: measurement
+        state: >-
+          {% if ev == 'job_finished' %}0
+          {% elif is_job %}{{ trigger.json.remaining_s | float(0) }}
+          {% else %}{{ this.state | float(0) }}
+          {% endif %}
+
+      # Distances have no unit here; set one if you know what Rayforge reports.
+      - name: "RayForge Job Travelled Distance"
+        unique_id: rayforge_job_travelled_distance
+        state_class: measurement
+        state: >-
+          {% if ev == 'job_started' %}0
+          {% elif is_job %}{{ trigger.json.travelled_distance | float(0) }}
+          {% else %}{{ this.state | float(0) }}
+          {% endif %}
+
+      - name: "RayForge Job Total Distance"
+        unique_id: rayforge_job_total_distance
+        state_class: measurement
+        state: >-
+          {% if is_job %}{{ trigger.json.total_distance | float(0) }}
+          {% else %}{{ this.state | float(0) }}
+          {% endif %}
+
+      # Last alarm / error message; "none" once a new job or connection is OK.
+      - name: "RayForge Alarm"
+        unique_id: rayforge_alarm
+        state: >-
+          {% if ev in ['alarm', 'job_error', 'connection_error'] %}
+            {{ trigger.json.alarm_code | default('') or ev }}
+          {% elif ev in ['job_started', 'job_finished', 'connected'] %}none
+          {% else %}
+            {{ this.state if this.state not in
+               ['unknown', 'unavailable', none] else 'none' }}
+          {% endif %}
+
+    binary_sensor:
+      # Machine connection, from the boolean in the payload. If it is missing
+      # (null), fall back to the event name, then to the previous state.
+      - name: "RayForge Connected"
+        unique_id: rayforge_connected
+        device_class: connectivity
+        state: >-
+          {% if trigger.json.connected is boolean %}
+            {{ trigger.json.connected }}
+          {% elif ev == 'connected' %}true
+          {% elif ev in ['disconnected', 'connection_error'] %}false
+          {% else %}{{ this.state == 'on' }}
+          {% endif %}
+
+      # On while a job is running or paused.
+      - name: "RayForge Job Active"
+        unique_id: rayforge_job_active
+        device_class: running
+        state: >-
+          {% if ev in ['job_started', 'job_progress', 'job_resumed',
+                       'job_paused'] %}true
+          {% elif ev in ['job_finished', 'job_stopped', 'job_error',
+                         'disconnected'] %}false
+          {% else %}{{ this.state == 'on' }}
+          {% endif %}

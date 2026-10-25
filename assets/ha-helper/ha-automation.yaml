@@ -1,0 +1,13 @@
+automation:
+  - alias: "RayForge job finished"
+    triggers:
+      - trigger: state
+        entity_id: sensor.rayforge_job_status
+        to: "finished"
+    actions:
+      - action: notify.notify
+        data:
+          message: >-
+            Laser job finished after
+            {{ (states('sensor.rayforge_job_elapsed') | float(0) / 60) | round(1) }}
+            minutes.
