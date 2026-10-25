@@ -62,7 +62,7 @@ DATA=$(jq -n -c \
     --arg machine_state "${RAYFORGE_STATUS:-}" \
     --arg alarm_code "${RAYFORGE_MESSAGE:-}" \
     --arg job_state "${RAYFORGE_JOB_KIND:-}" \
-    --arg progress "${RAYFORGE_PROGRESS:-}" \
+    --arg progress "${RAYFORGE_PROGRESS:0}" \
     --arg travelled "${RAYFORGE_TRAVELED_DISTANCE:-}" \
     --arg total "${RAYFORGE_TOTAL_DISTANCE:-}" \
     --arg elapsed "${RAYFORGE_ELAPSED_SECONDS:-}" \
